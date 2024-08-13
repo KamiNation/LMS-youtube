@@ -62,3 +62,27 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
     timestamps: true
 } // this adds two fiels, created at and update at
 ) 
+
+
+// hash user password before saving it
+userSchema.pre<IUser>('save', async function (next) {
+    // Only hash the password if it has been modified (or is new)
+    if (!this.isModified('password')) {
+        return next(); // Skip hashing if the password hasn't changed
+    }
+
+    // Hash the password with a salt round of 10
+    this.password = await bcryptjs.hash(this.password, 10);
+
+    next(); // Call next() after hashing
+});
+
+
+// compare password
+userSchema.methods.comparePassword = async function(enterdPassword: string): Promise<boolean> {
+    return await bcryptjs.compare(enterdPassword, this.password);
+};
+
+const userModel: Model<IUser> = mongoose.model("User", userSchema);
+
+export default userModel
