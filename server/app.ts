@@ -1,5 +1,7 @@
 import express, { NextFunction, Request, Response } from "express"
 require("dotenv").config();
+import userRouter from "./routes/user.routes";
+
 
 // import errorMiddleware from middleware
 import { ErrorMiddleware } from "./middleware/error";
@@ -19,6 +21,9 @@ app.use(cors({
     origin: process.env.ORIGIN
 }))
 
+
+// routes
+app.use("/api/v1", userRouter)
 
 // testing api
 app.get("/test", (req: Request, res: Response, next: NextFunction) => {

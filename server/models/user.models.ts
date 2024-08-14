@@ -1,24 +1,29 @@
 import mongoose, { Document, Model, Schema } from "mongoose";
 import bcryptjs from "bcryptjs";
-import jwt from "jsonwebtoken"
+
 
 const emailRegexPattern: RegExp = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-export interface IUser extends Document {
+
+// user model interface
+export interface UserModelInterface extends Document {
     name: string
     email: string
     password: string
-    avatar: {
+    avatar?: {
         public_id: string
         url: string
     },
     role: string
     isVerified: boolean
-    courses: Array<{ courseId: string }>
+    courses?: Array<{ courseId: string }>
     comparePassword: (password: string) => Promise<boolean>
 }
 
-const userSchema: Schema<IUser> = new mongoose.Schema({
+
+
+// user model schema
+const userSchema: Schema<UserModelInterface> = new mongoose.Schema({
     name: {
         type: String,
         required: [true, "Please enter your name"],
@@ -37,12 +42,12 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
     password: {
         type: String,
         required: [true, "Please enter your password"],
-        minlength: [6, "Please enter at least 6 charactera"],
+        minlength: [6, "Please enter at least 6 characters"],
         select: false
     },
     avatar: {
-        public_id: String,
-        url: String,
+        public_id: { type: String },
+        url: { type: String },
     },
     role: {
         type: String,
@@ -54,18 +59,18 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
     },
     courses: [
         {
-            courseId: String,
+            courseId: { type: String },
         }
     ],
 
 }, {
     timestamps: true
 } // this adds two fiels, created at and update at
-) 
+)
 
 
 // hash user password before saving it
-userSchema.pre<IUser>('save', async function (next) {
+userSchema.pre<UserModelInterface>('save', async function (next) {
     // Only hash the password if it has been modified (or is new)
     if (!this.isModified('password')) {
         return next(); // Skip hashing if the password hasn't changed
@@ -79,10 +84,10 @@ userSchema.pre<IUser>('save', async function (next) {
 
 
 // compare password
-userSchema.methods.comparePassword = async function(enterdPassword: string): Promise<boolean> {
+userSchema.methods.comparePassword = async function (enterdPassword: string): Promise<boolean> {
     return await bcryptjs.compare(enterdPassword, this.password);
 };
 
-const userModel: Model<IUser> = mongoose.model("User", userSchema);
+const userModel: Model<UserModelInterface> = mongoose.model("User", userSchema);
 
 export default userModel
