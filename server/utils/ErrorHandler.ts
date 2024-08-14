@@ -1,14 +1,22 @@
-// This file handles error that we might come across in our appliation by creating a class for it
+// This file handles errors that we might encounter in our application by creating a custom error handling class
 
-
+// Define a custom error class `ErrorHandler` that extends the built-in `Error` class
 class ErrorHandler extends Error {
-    statusCode: Number
-    constructor(message: any, statusCode: Number){
-        super(message);
-        this.statusCode = statusCode
+    // `statusCode` will store the HTTP status code associated with the error
+    statusCode: Number;
 
-        Error.captureStackTrace(this, this.constructor)
+    // The constructor takes two parameters: the error message and the HTTP status code
+    constructor(message: any, statusCode: Number) {
+        // Call the parent `Error` class constructor with the error message
+        super(message);
+        
+        // Set the status code for this error instance
+        this.statusCode = statusCode;
+
+        // Capture the stack trace for this error, excluding the constructor call
+        Error.captureStackTrace(this, this.constructor);
     }
 }
 
-export  default ErrorHandler
+// Export the `ErrorHandler` class as the default export for use in other parts of the application
+export default ErrorHandler;

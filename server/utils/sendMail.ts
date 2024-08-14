@@ -4,8 +4,6 @@ import ejs from "ejs"
 import path from "path"
 
 
-console.log("ACTIVATION_SECRET:", process.env.ACTIVATION_SECRET);
-
 
 interface EmailOptions {
     email: string
@@ -33,28 +31,17 @@ const sendMail = async (options: EmailOptions) => {
         const { email, subject, template, data } = options
         // const { email, subject, htmls } = options
 
-        console.log("email in sendmail =>", email);
-        console.log("subject in sendmail =>", subject);
-        console.log("template in sendmail =>", template);
-        console.log("data in sendmail", data);
-        
-        
-        
+
 
         // get the path to the email template
         // await ejs.renderFile(path.join(__dirname, "../mails/activation-email.ejs"), data)
         const templatePath = path.join(__dirname, "../mails/", template)
-        console.log("templatePath from registrationUser =>", templatePath);
 
-        // console.log("Current working directory:", process.cwd());
-
-        
 
         // Render email template with ejs
         let html: string;
         try {
             html = await ejs.renderFile(templatePath, data);
-            console.log("html in sendmail =>", html);
             // html: htmls
             // console.log("html in sendmail =>", htmls);
 
