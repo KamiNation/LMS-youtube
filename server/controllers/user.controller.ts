@@ -285,6 +285,8 @@ export const updateAccessToken = CatchAsyncError(async (req: Request, res: Respo
             expiresIn: "3d"
         });
 
+        req.user = user;
+
         // Set the new access and refresh tokens in the user's cookies with the appropriate options
         res.cookie("accessToken", accessToken, accessTokenOptions);
         res.cookie("refreshToken", refreshToken, refreshTokenOptions);
@@ -355,4 +357,55 @@ export const socialAuth = CatchAsyncError(async (req: Request, res: Response, ne
 
 
 
-// update
+// update user-info, password and avatar
+interface updateUserInfoInterface {
+    name?: string;
+    email?: string
+}
+
+
+export const updateUserInfo = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        // Extract 'email' and 'name' from the request body, ensuring they match the expected interface
+        const { email, name } = req.body as updateUserInfoInterface;
+
+        // Retrieve the user ID from the authenticated user's session
+        const userId = req.user?._id as string;
+
+        // Find the user in the database using the extracted user ID
+        const user = await userModel.findById(userId);
+
+        // If an email is provided and the user exists
+        if (email && user) {
+            // Check if the new email already exists in the database to prevent duplicate emails
+            const isEmailExist = await userModel.findOne({ email });
+            if (isEmailExist) {
+                // If the email already exists, return an error response to avoid conflicting accounts
+                return next(new ErrorHandler("Email already exists", 400));
+            }
+            // Update the user's email if the new email is unique
+            user.email = email;
+        }
+
+        // If the user exists, proceed with the name update if both name and user are provided
+            if (name && user) {
+                user.name = name;
+            }
+
+        // Save the updated user information to the database
+        await user?.save();
+
+        // Update the user's session in Redis with the new user information
+        await redis.set(userId, JSON.stringify(user));
+
+        // Send a success response with the updated user information
+        res.status(201).json({
+            success: true,
+            user,
+        });
+
+    } catch (error: any) {
+        // Catch any errors that occur during the update process and pass them to the error handling middleware
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
