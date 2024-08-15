@@ -1,8 +1,14 @@
+require("dotenv").config()
+
+
 // Import necessary modules from Mongoose for defining schemas and models
 import mongoose, { Document, Model, Schema } from "mongoose";
 
 // Import bcryptjs for hashing and comparing passwords
 import bcryptjs from "bcryptjs";
+
+
+import jwt from "jsonwebtoken";
 
 // Regular expression pattern for validating email format
 const emailRegexPattern: RegExp = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -20,6 +26,8 @@ export interface UserModelInterface extends Document {
     isVerified: boolean; // Boolean indicating if the user's email is verified
     courses?: Array<{ courseId: string }>; // Optional array of courses the user is enrolled in
     comparePassword: (password: string) => Promise<boolean>; // Method to compare passwords
+    SignAccessToken: () => string
+    SignRefreshToken: () => string
 }
 
 // Define the user schema with fields and validation
@@ -79,6 +87,49 @@ userSchema.pre<UserModelInterface>('save', async function (next) {
 
     next(); // Call next() to proceed with saving the user
 });
+
+
+
+
+
+// This method is used to create an access token when a user logs in.
+
+// The token is signed with the user's ID and a secret key, using the JWT (JSON Web Token) library.
+userSchema.methods.SignAccessToken = function () {
+    // The `id` payload contains the user's unique identifier (`_id`).
+
+    // {"
+    // _id":{
+    // "$oid":"66bd1186103b76f3c27ddadc", here is the id
+    // "name":"orochimaru",
+    // "email":"adedamolacopy@gmail.com
+    // "password":"$2a$10$r0txoQtjKHY9k6ifQysL6.InARQb5/F8MHK27/9j95dYBdjvirazC",
+    // "role":"user",
+    // "isVerified":false,
+    // "courses":[],
+    // "createdAt":{"$date":{"$numberLong":"1723666822067"
+    // "updatedAt":{"$date":{"$numberLong":"1723666822067"},
+    // "__v":{"$numberInt":"0"}
+    // }
+
+
+    // The token is signed using the secret key stored in the environment variable `ACCESS_TOKEN`.
+    // If `ACCESS_TOKEN` is not defined, it defaults to an empty string.
+    return jwt.sign({ id: this._id }, process.env.ACCESS_TOKEN || '');
+};
+
+// This method is used to create a refresh token for the user.
+
+// Refresh tokens are used to obtain a new access token without requiring the user to log in again.
+userSchema.methods.SignRefreshToken = function () {
+    // Similar to the access token, the refresh token is signed with the user's ID.
+
+    // The secret key for the refresh token is stored in the environment variable `REFRESH_TOKEN`.
+    
+    // If `REFRESH_TOKEN` is not defined, it defaults to an empty string.
+    return jwt.sign({ id: this._id }, process.env.REFRESH_TOKEN || '');
+};
+
 
 // Method to compare the entered password with the hashed password in the database
 userSchema.methods.comparePassword = async function (enteredPassword: string): Promise<boolean> {

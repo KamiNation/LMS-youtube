@@ -10,6 +10,7 @@ import jwt, { Secret } from "jsonwebtoken";
 import ejs from "ejs";
 import path from "path";
 import sendMail from "../utils/sendMail";
+import { sendToken } from "../utils/jwt";
 
 // Define an interface for the user registration controller's input data
 interface userRegControllerInterface {
@@ -150,5 +151,48 @@ export const activateUser = CatchAsyncError(async (req: Request, res: Response, 
 
     } catch (error: any) {
         return next(new ErrorHandler(error.message, 400));  // Handle any errors during user activation
+    }
+});
+
+
+// Login user controller
+interface loginUserControllerInterface {
+    email: string
+    password: string
+}
+// This function handles user login and is wrapped with CatchAsyncError to manage any errors asynchronously.
+export const loginUser = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        // Destructure email and password from the request body and cast it to the expected interface.
+        const { email, password } = req.body as loginUserControllerInterface;
+
+        // Check if both email and password are provided. If not, throw an error.
+        if (!email || !password) {
+            return next(new ErrorHandler("Please enter email and password", 400)); // Handle the error by passing it to the next middleware.
+        }
+
+        // Find the user in the database by their email and explicitly select the password field.
+        // The password field is not selected by default for security reasons.
+        const user = await userModel.findOne({ email }).select("+password");
+
+        // If the user is not found, throw an error indicating that the email or password is incorrect.
+        if (!user) {
+            return next(new ErrorHandler("Invalid email or password", 400)); // Handle the error by passing it to the next middleware.
+        }
+
+        // Compare the provided password with the hashed password stored in the database.
+        const isPasswordMatch = await user.comparePassword(password);
+
+        // If the passwords do not match, throw an error indicating invalid email or password.
+        if (!isPasswordMatch) {
+            return next(new ErrorHandler("Invalid email or password", 400)); // Handle the error by passing it to the next middleware.
+        }
+
+        // If the code execution reaches here, it means the user credentials are valid.
+        sendToken(user, 200, res)
+
+    } catch (error: any) {
+        // Catch any other errors that occur during the login process and pass them to the next middleware.
+        return next(new ErrorHandler(error.message, 400)); // Handle the error by passing it to the next middleware.
     }
 });
