@@ -30,16 +30,16 @@ export const sendToken = (user: UserModelInterface, statusCode: number, res: Res
 
     // Define cookie options for the access token
     const accessTokenOptions: jwtTokenOptionsInterface = {
-        expires: new Date(Date.now() + accessTokenExpire * 1000), // Expiration date of the access token
-        maxAge: accessTokenExpire * 1000, // Maximum age of the access token cookie in milliseconds
+        expires: new Date(Date.now() + accessTokenExpire * 60 * 60 * 1000), // Expiration date of the access token
+        maxAge: accessTokenExpire * 60 * 60 * 1000, // Maximum age of the access token cookie in milliseconds
         httpOnly: true, // Make the cookie inaccessible to client-side scripts
         sameSite: 'lax' // Allow the cookie to be sent with same-site requests and top-level navigation
     };
 
     // Define cookie options for the refresh token
     const refreshTokenOptions: jwtTokenOptionsInterface = {
-        expires: new Date(Date.now() + refreshTokenExpire * 1000), // Expiration date of the refresh token
-        maxAge: refreshTokenExpire * 1000, // Maximum age of the refresh token cookie in milliseconds
+        expires: new Date(Date.now() + refreshTokenExpire * 24 * 60 * 60 * 1000), // Expiration date of the refresh token
+        maxAge: refreshTokenExpire * 24 * 60 * 60 * 1000, // Maximum age of the refresh token cookie in milliseconds
         httpOnly: true, // Make the cookie inaccessible to client-side scripts
         sameSite: 'lax' // Allow the cookie to be sent with same-site requests and top-level navigation
     };

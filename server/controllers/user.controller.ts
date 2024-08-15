@@ -188,7 +188,7 @@ export const loginUser = CatchAsyncError(async (req: Request, res: Response, nex
             return next(new ErrorHandler("Invalid email or password", 400)); // Handle the error by passing it to the next middleware.
         }
 
-        // If the code execution reaches here, it means the user credentials are valid.
+        // If the code execution reaches here, it means the user credentials are valid. snedToken() is inside jwt.ts
         sendToken(user, 200, res)
 
     } catch (error: any) {
@@ -196,3 +196,28 @@ export const loginUser = CatchAsyncError(async (req: Request, res: Response, nex
         return next(new ErrorHandler(error.message, 400)); // Handle the error by passing it to the next middleware.
     }
 });
+
+
+// login user
+export const logoutUser = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+
+try {
+    
+    // when user logouts we need to empty the token
+    res.cookie("access_token", "", {maxAge: 1});
+    res.cookie("refresh_token", "", {maxAge: 1});
+
+    res.status(200).json({
+        succes: true,
+        message: "Logged out succesfully"
+    })
+
+
+
+} catch (error: any) {
+    // Catch any other errors that occur during the login process and pass them to the next middleware.
+    return next(new ErrorHandler(error.message, 400)); // Handle the error by passing it to the next middleware.
+}
+
+
+})
