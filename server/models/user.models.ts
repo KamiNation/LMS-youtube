@@ -115,7 +115,9 @@ userSchema.methods.SignAccessToken = function () {
 
     // The token is signed using the secret key stored in the environment variable `ACCESS_TOKEN`.
     // If `ACCESS_TOKEN` is not defined, it defaults to an empty string.
-    return jwt.sign({ id: this._id }, process.env.ACCESS_TOKEN || '');
+    return jwt.sign({ id: this._id }, process.env.ACCESS_TOKEN || '', {
+        expiresIn: "5m"
+    });
 };
 
 // This method is used to create a refresh token for the user.
@@ -125,9 +127,11 @@ userSchema.methods.SignRefreshToken = function () {
     // Similar to the access token, the refresh token is signed with the user's ID.
 
     // The secret key for the refresh token is stored in the environment variable `REFRESH_TOKEN`.
-    
+
     // If `REFRESH_TOKEN` is not defined, it defaults to an empty string.
-    return jwt.sign({ id: this._id }, process.env.REFRESH_TOKEN || '');
+    return jwt.sign({ id: this._id }, process.env.REFRESH_TOKEN || '', {
+        expiresIn: "3d"
+    });
 };
 
 

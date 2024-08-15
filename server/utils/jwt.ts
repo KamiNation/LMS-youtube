@@ -15,6 +15,36 @@ interface jwtTokenOptionsInterface {
     secure?: boolean; // Ensures the cookie is sent only over HTTPS
 }
 
+
+
+
+
+// Parse environment variables to get expiration times for tokens, with fallback values
+const accessTokenExpire = parseInt(process.env.ACCESS_TOKEN_EXPIRE || '300', 10); // Default: 5 minutes
+const refreshTokenExpire = parseInt(process.env.REFRESH_TOKEN_EXPIRE || '1200', 10); // Default: 20 minutes
+
+// Define cookie options for the access token
+export const accessTokenOptions: jwtTokenOptionsInterface = {
+    expires: new Date(Date.now() + accessTokenExpire * 60 * 60 * 1000), // Expiration date of the access token
+    maxAge: accessTokenExpire * 60 * 60 * 1000, // Maximum age of the access token cookie in milliseconds
+    httpOnly: true, // Make the cookie inaccessible to client-side scripts
+    sameSite: 'lax' // Allow the cookie to be sent with same-site requests and top-level navigation
+};
+
+// Define cookie options for the refresh token
+export const refreshTokenOptions: jwtTokenOptionsInterface = {
+    expires: new Date(Date.now() + refreshTokenExpire * 24 * 60 * 60 * 1000), // Expiration date of the refresh token
+    maxAge: refreshTokenExpire * 24 * 60 * 60 * 1000, // Maximum age of the refresh token cookie in milliseconds
+    httpOnly: true, // Make the cookie inaccessible to client-side scripts
+    sameSite: 'lax' // Allow the cookie to be sent with same-site requests and top-level navigation
+};
+
+
+
+
+
+
+
 // Function to send tokens (access and refresh) to the user and set them in cookies
 export const sendToken = (user: UserModelInterface, statusCode: number, res: Response) => {
     // Generate the access and refresh tokens using the user's custom schema methodsArgument of type 'unknown' is not assignable to parameter of type 'RedisKey'.ts(2345)
@@ -24,25 +54,7 @@ export const sendToken = (user: UserModelInterface, statusCode: number, res: Res
     // Store the user's session in Redis, with the user's ID as the key
     redis.set(user._id as RedisKey, JSON.stringify(user) as any);
 
-    // Parse environment variables to get expiration times for tokens, with fallback values
-    const accessTokenExpire = parseInt(process.env.ACCESS_TOKEN_EXPIRE || '300', 10); // Default: 5 minutes
-    const refreshTokenExpire = parseInt(process.env.REFRESH_TOKEN_EXPIRE || '1200', 10); // Default: 20 minutes
-
-    // Define cookie options for the access token
-    const accessTokenOptions: jwtTokenOptionsInterface = {
-        expires: new Date(Date.now() + accessTokenExpire * 60 * 60 * 1000), // Expiration date of the access token
-        maxAge: accessTokenExpire * 60 * 60 * 1000, // Maximum age of the access token cookie in milliseconds
-        httpOnly: true, // Make the cookie inaccessible to client-side scripts
-        sameSite: 'lax' // Allow the cookie to be sent with same-site requests and top-level navigation
-    };
-
-    // Define cookie options for the refresh token
-    const refreshTokenOptions: jwtTokenOptionsInterface = {
-        expires: new Date(Date.now() + refreshTokenExpire * 24 * 60 * 60 * 1000), // Expiration date of the refresh token
-        maxAge: refreshTokenExpire * 24 * 60 * 60 * 1000, // Maximum age of the refresh token cookie in milliseconds
-        httpOnly: true, // Make the cookie inaccessible to client-side scripts
-        sameSite: 'lax' // Allow the cookie to be sent with same-site requests and top-level navigation
-    };
+    
 
     // If the application is running in production, ensure cookies are only sent over HTTPS
     if (process.env.NODE_ENV === 'production') {

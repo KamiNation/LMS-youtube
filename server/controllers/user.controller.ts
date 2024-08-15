@@ -6,11 +6,13 @@ import { Request, Response, NextFunction } from "express";
 import userModel, { UserModelInterface } from "../models/user.models";
 import ErrorHandler from "../utils/ErrorHandler";
 import { CatchAsyncError } from "../middleware/catchAsyncError";
-import jwt, { Secret } from "jsonwebtoken";
+import jwt, { JwtPayload, Secret } from "jsonwebtoken";
 import ejs from "ejs";
 import path from "path";
 import sendMail from "../utils/sendMail";
-import { sendToken } from "../utils/jwt";
+import { accessTokenOptions, sendToken, refreshTokenOptions } from "../utils/jwt";
+import { redis } from "../utils/redis";
+import { getUserById } from "../services/user.service";
 
 // Define an interface for the user registration controller's input data
 interface userRegControllerInterface {
@@ -209,14 +211,21 @@ export const logoutUser = CatchAsyncError(async (req: Request, res: Response, ne
         // Clear the refresh token by setting it as an empty string with a short expiration time
         res.cookie("refresh_token", "", { maxAge: 1 });
 
+        // The above does not delete our session in redis so 
+        // we need to do that but first inclue our protected routes
+        const userId = (req.user?._id as string) || "";
+
+        console.log(userId);
+
+        redis.del(userId);
+
+
+
         // Send a successful response to indicate the user has logged out
         res.status(200).json({
             success: true,
             message: "Logged out successfully"
         });
-
-        // The above does not delete our session in redis so 
-        // we need to do that but first inclue our protected routes
 
 
 
@@ -227,3 +236,77 @@ export const logoutUser = CatchAsyncError(async (req: Request, res: Response, ne
 
 });
 
+
+// validate user role
+export const authorizeRoles = (...roles: string[]) => {
+    return (req: Request, res: Response, next: NextFunction) => {
+        if (!roles.includes(req.user?.role || "")) {
+            return next(new ErrorHandler(`Roles: ${req.user?.role} is not allowed to access this resource`, 400))
+        }
+    }
+}
+
+
+// update access token
+export const updateAccessToken = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        // we need the refresh token
+        const refresh_token = req.cookies.refresh_token as string
+
+        // validate refresh token
+        const decoded = jwt.verify(refresh_token, process.env.REFRESH_TOKEN as string) as JwtPayload;
+
+
+        const message = "Could not refresh token"
+        if (!decoded) {
+            return next(new ErrorHandler(message, 400))
+        }
+
+        const session = await redis.get(decoded.id as string)
+
+        if (!session) {
+            return next(new ErrorHandler(message, 400))
+        }
+
+
+        const user = JSON.parse(session)
+
+        const accessToken = jwt.sign({ id: user._id }, process.env.ACCESS_TOKEN as string, {
+            expiresIn: "5m"
+        })
+
+        const refreshToken = jwt.sign({ id: user._id }, process.env.REFRESH_TOKEN as string, {
+            expiresIn: "3d"
+        })
+
+        // update cookie
+        res.cookie("accessToken", accessToken, accessTokenOptions)
+
+        res.cookie("refreshToken", refreshToken, refreshTokenOptions)
+
+        res.status(200).json({
+            status: "success",
+            accessToken
+        })
+
+
+    } catch (error: any) {
+        // Catch any errors that occur during the logout process and pass them to the next middleware
+        return next(new ErrorHandler(error.message, 400)); // Handle the error by passing it to the next middleware
+    }
+})
+
+
+// get user info
+
+export const getUserInfo = CatchAsyncError((async (req: Request, res: Response, next: NextFunction) => {
+    try {
+
+        const userId = req.user?._id;
+        getUserById(userId as string, res)
+
+    } catch (error: any) {
+        // Catch any errors that occur during the logout process and pass them to the next middleware
+        return next(new ErrorHandler(error.message, 400)); // Handle the error by passing it to the next middleware
+    }
+}))
