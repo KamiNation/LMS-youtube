@@ -50,7 +50,7 @@ const userSchema: Schema<UserModelInterface> = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: [true, "Please enter your password"], // Password is required with a custom error message
+        // required: [true, "Please enter your password"], // Password is required with a custom error message
         minlength: [6, "Please enter at least 6 characters"], // Minimum password length is 6 characters
         select: false // Do not return the password field by default when querying the user
     },

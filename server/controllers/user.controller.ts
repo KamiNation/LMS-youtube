@@ -250,63 +250,109 @@ export const authorizeRoles = (...roles: string[]) => {
 // update access token
 export const updateAccessToken = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
-        // we need the refresh token
-        const refresh_token = req.cookies.refresh_token as string
+        // Retrieve the refresh token from the cookies in the incoming request
+        const refresh_token = req.cookies.refresh_token as string;
 
-        // validate refresh token
+        // Validate the refresh token using JWT's verify method
         const decoded = jwt.verify(refresh_token, process.env.REFRESH_TOKEN as string) as JwtPayload;
 
+        // Error message for cases where the token cannot be refreshed
+        const message = "Could not refresh token";
 
-        const message = "Could not refresh token"
+        // If the token is invalid or cannot be decoded, send an error response
         if (!decoded) {
-            return next(new ErrorHandler(message, 400))
+            return next(new ErrorHandler(message, 400));
         }
 
-        const session = await redis.get(decoded.id as string)
+        // Fetch the session from Redis using the user ID from the decoded token
+        const session = await redis.get(decoded.id as string);
 
+        // If the session does not exist in Redis, send an error response
         if (!session) {
-            return next(new ErrorHandler(message, 400))
+            return next(new ErrorHandler(message, 400));
         }
 
+        // Parse the user information from the session data stored in Redis
+        const user = JSON.parse(session);
 
-        const user = JSON.parse(session)
-
+        // Generate a new access token for the user with a short expiration time (e.g., 5 minutes)
         const accessToken = jwt.sign({ id: user._id }, process.env.ACCESS_TOKEN as string, {
             expiresIn: "5m"
-        })
+        });
 
+        // Generate a new refresh token for the user with a longer expiration time (e.g., 3 days)
         const refreshToken = jwt.sign({ id: user._id }, process.env.REFRESH_TOKEN as string, {
             expiresIn: "3d"
-        })
+        });
 
-        // update cookie
-        res.cookie("accessToken", accessToken, accessTokenOptions)
+        // Set the new access and refresh tokens in the user's cookies with the appropriate options
+        res.cookie("accessToken", accessToken, accessTokenOptions);
+        res.cookie("refreshToken", refreshToken, refreshTokenOptions);
 
-        res.cookie("refreshToken", refreshToken, refreshTokenOptions)
-
+        // Send a success response back to the client, including the new access token
         res.status(200).json({
             status: "success",
             accessToken
-        })
-
+        });
 
     } catch (error: any) {
-        // Catch any errors that occur during the logout process and pass them to the next middleware
-        return next(new ErrorHandler(error.message, 400)); // Handle the error by passing it to the next middleware
+        // Catch any errors that occur during the token update process and pass them to the error handling middleware
+        return next(new ErrorHandler(error.message, 400));
     }
-})
+});
+
 
 
 // get user info
-
-export const getUserInfo = CatchAsyncError((async (req: Request, res: Response, next: NextFunction) => {
+export const getUserInfo = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
-
+        // Extract the user ID from the authenticated user in the request object
         const userId = req.user?._id;
-        getUserById(userId as string, res)
+
+        // Call the function to get user details by their ID and send the response back to the client
+        // The `getUserById` function handles the response sending
+        getUserById(userId as string, res);
 
     } catch (error: any) {
-        // Catch any errors that occur during the logout process and pass them to the next middleware
-        return next(new ErrorHandler(error.message, 400)); // Handle the error by passing it to the next middleware
+        // Catch any errors that occur during the process and pass them to the error handling middleware
+        return next(new ErrorHandler(error.message, 400));
     }
-}))
+});
+
+
+
+interface socialAuthBodyInterface {
+    email: string
+    name: string
+    avatar: string
+}
+
+
+// social auth
+export const socialAuth = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        // Extract user data (email, name, avatar) from the request body sent by the frontend
+        const { email, name, avatar } = req.body as socialAuthBodyInterface;
+
+        // Check if a user with the provided email already exists in the database
+        const user = await userModel.findOne({ email });
+
+        // If the user does not exist, create a new user in the database with the provided information
+        if (!user) {
+            const newUser = await userModel.create({ email, name, avatar });
+            // Send an authentication token to the newly created user and respond with a success status
+            sendToken(newUser, 200, res);
+        } else {
+            // If the user already exists, send an authentication token to the user and respond with a success status
+            sendToken(user, 200, res);
+        }
+
+    } catch (error: any) {
+        // Catch any errors that occur during the social authentication process and pass them to the error handling middleware
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
+
+
+
+// update
