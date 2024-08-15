@@ -198,26 +198,32 @@ export const loginUser = CatchAsyncError(async (req: Request, res: Response, nex
 });
 
 
-// login user
+// logout user
+// Handle user logout, clear cookies, and return a success message
 export const logoutUser = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
 
-try {
-    
-    // when user logouts we need to empty the token
-    res.cookie("access_token", "", {maxAge: 1});
-    res.cookie("refresh_token", "", {maxAge: 1});
+    try {
+        // Clear the access token by setting it as an empty string with a short expiration time
+        res.cookie("access_token", "", { maxAge: 1 });
 
-    res.status(200).json({
-        succes: true,
-        message: "Logged out succesfully"
-    })
+        // Clear the refresh token by setting it as an empty string with a short expiration time
+        res.cookie("refresh_token", "", { maxAge: 1 });
 
+        // Send a successful response to indicate the user has logged out
+        res.status(200).json({
+            success: true,
+            message: "Logged out successfully"
+        });
 
-
-} catch (error: any) {
-    // Catch any other errors that occur during the login process and pass them to the next middleware.
-    return next(new ErrorHandler(error.message, 400)); // Handle the error by passing it to the next middleware.
-}
+        // The above does not delete our session in redis so 
+        // we need to do that but first inclue our protected routes
 
 
-})
+
+    } catch (error: any) {
+        // Catch any errors that occur during the logout process and pass them to the next middleware
+        return next(new ErrorHandler(error.message, 400)); // Handle the error by passing it to the next middleware
+    }
+
+});
+
