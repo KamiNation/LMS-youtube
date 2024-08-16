@@ -1,6 +1,6 @@
 import express from "express"
-import { activateUser, registrationUser, loginUser, logoutUser, authorizeRoles, updateAccessToken, getUserInfo, socialAuth, updateUserInfo, updatePassword, updateProfilePicture } from "../controllers/user.controller"
-import { isAuthenticated } from "../middleware/auth";
+import { activateUser, registrationUser, loginUser, logoutUser, updateAccessToken, getUserInfo, socialAuth, updateUserInfo, updatePassword, updateProfilePicture } from "../controllers/user.controller"
+import { isAuthenticated, authorizeRoles } from "../middleware/auth";
 
 
 
