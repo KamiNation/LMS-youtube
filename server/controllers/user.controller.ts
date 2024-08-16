@@ -388,9 +388,9 @@ export const updateUserInfo = CatchAsyncError(async (req: Request, res: Response
         }
 
         // If the user exists, proceed with the name update if both name and user are provided
-            if (name && user) {
-                user.name = name;
-            }
+        if (name && user) {
+            user.name = name;
+        }
 
         // Save the updated user information to the database
         await user?.save();
@@ -403,6 +403,53 @@ export const updateUserInfo = CatchAsyncError(async (req: Request, res: Response
             success: true,
             user,
         });
+
+    } catch (error: any) {
+        // Catch any errors that occur during the update process and pass them to the error handling middleware
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
+
+
+// update password
+interface updatePasswordInterface {
+    oldPassword: string
+    newPassword: string
+}
+
+
+export const updatePassword = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    try {
+
+        const { oldPassword, newPassword } = req.body as updatePasswordInterface
+
+
+        if(!oldPassword || !newPassword){
+            return next(new ErrorHandler("Please enter old or new password ", 400))
+        }
+
+        const user = await userModel.findById(req.user?._id).select("+password")
+
+        if(user?.password === undefined){
+            return next(new ErrorHandler("Invalid User", 400))
+        }
+
+        const isPasswordMatch = await user?.comparePassword(oldPassword);
+
+        if(!isPasswordMatch){
+            return next(new ErrorHandler("Invalid Old Password", 400))
+        }
+
+        user.password = newPassword
+
+        await user.save()
+
+        await redis.set(req.user?._id as string, JSON.stringify(user));
+
+        res.status(201).json({
+            success: true,
+            user
+        })
 
     } catch (error: any) {
         // Catch any errors that occur during the update process and pass them to the error handling middleware
