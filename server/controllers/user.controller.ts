@@ -1,3 +1,5 @@
+import { RedisKey } from 'ioredis';
+
 // Load environment variables from .env file
 require("dotenv").config();
 
@@ -7,12 +9,11 @@ import userModel, { UserModelInterface } from "../models/user.models";
 import ErrorHandler from "../utils/ErrorHandler";
 import { CatchAsyncError } from "../middleware/catchAsyncError";
 import jwt, { JwtPayload, Secret } from "jsonwebtoken";
-import ejs from "ejs";
-import path from "path";
 import sendMail from "../utils/sendMail";
 import { accessTokenOptions, sendToken, refreshTokenOptions } from "../utils/jwt";
 import { redis } from "../utils/redis";
 import { getUserById } from "../services/user.service";
+import cloudinary from "cloudinary"
 
 // Define an interface for the user registration controller's input data
 interface userRegControllerInterface {
@@ -424,19 +425,19 @@ export const updatePassword = CatchAsyncError(async (req: Request, res: Response
         const { oldPassword, newPassword } = req.body as updatePasswordInterface
 
 
-        if(!oldPassword || !newPassword){
+        if (!oldPassword || !newPassword) {
             return next(new ErrorHandler("Please enter old or new password ", 400))
         }
 
         const user = await userModel.findById(req.user?._id).select("+password")
 
-        if(user?.password === undefined){
+        if (user?.password === undefined) {
             return next(new ErrorHandler("Invalid User", 400))
         }
 
         const isPasswordMatch = await user?.comparePassword(oldPassword);
 
-        if(!isPasswordMatch){
+        if (!isPasswordMatch) {
             return next(new ErrorHandler("Invalid Old Password", 400))
         }
 
@@ -453,6 +454,60 @@ export const updatePassword = CatchAsyncError(async (req: Request, res: Response
 
     } catch (error: any) {
         // Catch any errors that occur during the update process and pass them to the error handling middleware
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
+
+
+// update profile picture
+interface updateProfilePictureInterface {
+    avatar: string
+}
+
+export const updateProfilePicture = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        // Extract the new avatar URL from the request body
+        const { avatar } = req.body as updateProfilePictureInterface;
+
+        // Retrieve the user ID from the authenticated session
+        const userId = req.user?._id;
+
+        // Find the user in the database using the user ID
+        const user = await userModel.findById(userId);
+
+        // If the new avatar is provided and the user exists
+        if (avatar && user) {
+            // If the user already has an avatar, delete the existing image from Cloudinary
+            if (user.avatar?.public_id) {
+                await cloudinary.v2.uploader.destroy(user.avatar.public_id);
+            }
+
+            // Upload the new avatar to Cloudinary
+            const myCloud = await cloudinary.v2.uploader.upload(avatar, { folder: "avatars", width: 150 });
+
+            // Update the user's avatar information with the new image's public_id and secure URL
+            user.avatar = {
+                public_id: myCloud.public_id,
+                url: myCloud.secure_url
+            };
+
+            // Save the updated user information to the database
+            await user?.save();
+
+            await redis.set(userId as string, JSON.stringify(user))
+
+            // Send a success response with the updated user information
+            res.status(200).json({
+                success: true,
+                user,
+            });
+        } else {
+            // If the avatar or user is not provided, send an appropriate error response
+            return next(new ErrorHandler("Invalid request: missing avatar or user", 400));
+        }
+
+    } catch (error: any) {
+        // Catch any errors that occur during the profile picture update process and pass them to the error handling middleware
         return next(new ErrorHandler(error.message, 400));
     }
 });
