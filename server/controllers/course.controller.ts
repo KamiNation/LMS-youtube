@@ -6,18 +6,10 @@ import { createCourse } from '../services/course.service';
 
 
 // upload course controller
-export const uploadCourse = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+export const createCourses = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
-
-        console.log("upload controller up and grateful");
-
         const data = req.body;
-        console.log(data);
-        
-
-        if (!data) {
-            return next(new ErrorHandler("Please enter data", 400))
-        }
+        console.log("data in create course =>", data);
 
         const thumbnail = data.thumbnail;
 
@@ -32,7 +24,8 @@ export const uploadCourse = CatchAsyncError(async (req: Request, res: Response, 
             }
         }
 
-        await createCourse(data, res, next)
+        createCourse(data, res, next);
+
 
     } catch (error: any) {
         return next(new ErrorHandler(error.message, 500))

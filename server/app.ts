@@ -1,15 +1,22 @@
+// Packages import
 import express, { NextFunction, Request, Response } from "express"
 require("dotenv").config();
+import cors from "cors"
+import cookieParser from "cookie-parser";
+import morgan from "morgan"
+
+
+// Custom import
 import userRouter from "./routes/user.routes";
-import courseRouter from "./routes/course.route";
+import courseRouter from "./routes/course.routes";
 
 // import errorMiddleware from middleware
 import { ErrorMiddleware } from "./middleware/error";
 
+
+// express server 
 export const app = express();
-import cors from "cors"
-import cookieParser from "cookie-parser";
-import morgan from "morgan"
+
 
 // Body parser Middleware to parse JSON request bodies with a specified size limit
 app.use(express.json({ limit: "50mb" }))
@@ -26,6 +33,7 @@ app.use(morgan("tiny"))
 
 // routes
 app.use("/api/v1", userRouter, courseRouter)
+// app.use("/c", courseRouter)
 
 // testing api
 app.get("/test", (req: Request, res: Response, next: NextFunction) => {

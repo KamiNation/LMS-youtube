@@ -166,6 +166,8 @@ interface loginUserControllerInterface {
 // This function handles user login and is wrapped with CatchAsyncError to manage any errors asynchronously.
 export const loginUser = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
+        console.log("loginUser up and grateful");
+
         // Destructure email and password from the request body and cast it to the expected interface.
         const { email, password } = req.body as loginUserControllerInterface;
 

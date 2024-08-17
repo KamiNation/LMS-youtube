@@ -11,6 +11,7 @@ import { redis } from "../utils/redis";
 export const isAuthenticated = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
 
 
+    console.log("isAuthenticated middleware");
     // Retrieve the access token from cookies
     const access_token = req.cookies.access_token as string;
 
@@ -48,8 +49,13 @@ export const isAuthenticated = CatchAsyncError(async (req: Request, res: Respons
 // validate user role
 export const authorizeRoles = (...roles: string[]) => {
     return (req: Request, res: Response, next: NextFunction) => {
+        console.log("authorizeRoles middleware", req.user);
+
         if (!roles.includes(req.user?.role || "")) {
             return next(new ErrorHandler(`Roles: ${req.user?.role} is not allowed to access this resource`, 400))
         }
+
+         // Proceed to the next middleware or route handler
+        next()
     }
 }
