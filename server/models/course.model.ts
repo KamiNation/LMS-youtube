@@ -104,11 +104,9 @@ const courseSchema = new Schema<courseInterface>({
     },
     thumbnail: {
         public_id: {
- 
             type: String
         },
         url: {
-
             type: String
         },
     },

@@ -193,7 +193,7 @@ export const loginUser = CatchAsyncError(async (req: Request, res: Response, nex
             return next(new ErrorHandler("Invalid email or password", 400)); // Handle the error by passing it to the next middleware.
         }
 
-        // If the code execution reaches here, it means the user credentials are valid. snedToken() is inside jwt.ts
+        // If the code execution reaches here, it means the user credentials are valid. sendToken() is inside jwt.ts
         sendToken(user, 200, res)
 
     } catch (error: any) {
@@ -215,7 +215,7 @@ export const logoutUser = CatchAsyncError(async (req: Request, res: Response, ne
         res.cookie("refresh_token", "", { maxAge: 1 });
 
         // The above does not delete our session in redis so 
-        // we need to do that but first inclue our protected routes
+        // we need to do that but first includes our protected routes
         const userId = (req.user?._id as string) || "";
 
         console.log(userId);
@@ -245,11 +245,17 @@ export const logoutUser = CatchAsyncError(async (req: Request, res: Response, ne
 // update access token
 export const updateAccessToken = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
+        console.log("updateAccessToken  up and grateful\n");
+        
         // Retrieve the refresh token from the cookies in the incoming request
         const refresh_token = req.cookies.refresh_token as string;
+        console.log(" refresh_token in updateAccessTOken\n", refresh_token);
+        
 
         // Validate the refresh token using JWT's verify method
         const decoded = jwt.verify(refresh_token, process.env.REFRESH_TOKEN as string) as JwtPayload;
+        console.log(" decoded in updateAccessTOken\n", decoded);
+
 
         // Error message for cases where the token cannot be refreshed
         const message = "Could not refresh token";
@@ -261,6 +267,8 @@ export const updateAccessToken = CatchAsyncError(async (req: Request, res: Respo
 
         // Fetch the session from Redis using the user ID from the decoded token
         const session = await redis.get(decoded.id as string);
+        console.log(" session in updateAccessTOken\n", session);
+        
 
         // If the session does not exist in Redis, send an error response
         if (!session) {
@@ -269,16 +277,23 @@ export const updateAccessToken = CatchAsyncError(async (req: Request, res: Respo
 
         // Parse the user information from the session data stored in Redis
         const user = JSON.parse(session);
+        console.log(" user in updateAccessTOken\n", user);
+        
 
         // Generate a new access token for the user with a short expiration time (e.g., 5 minutes)
         const accessToken = jwt.sign({ id: user._id }, process.env.ACCESS_TOKEN as string, {
             expiresIn: "5m"
         });
+        console.log(" accessToken in updateAccessTOken\n", accessToken);
+
+
 
         // Generate a new refresh token for the user with a longer expiration time (e.g., 3 days)
         const refreshToken = jwt.sign({ id: user._id }, process.env.REFRESH_TOKEN as string, {
             expiresIn: "3d"
         });
+        console.log(" refreshToken in updateAccessTOken\n", refreshToken);
+
 
         req.user = user;
 
@@ -289,7 +304,7 @@ export const updateAccessToken = CatchAsyncError(async (req: Request, res: Respo
         // Send a success response back to the client, including the new access token
         res.status(200).json({
             status: "success",
-            accessToken
+            refreshToken
         });
 
     } catch (error: any) {
