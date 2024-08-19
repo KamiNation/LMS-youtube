@@ -1,4 +1,3 @@
-import { RedisKey } from 'ioredis';
 
 // Load environment variables from .env file
 require("dotenv").config();
@@ -163,6 +162,9 @@ interface loginUserControllerInterface {
     email: string
     password: string
 }
+
+
+
 // This function handles user login and is wrapped with CatchAsyncError to manage any errors asynchronously.
 export const loginUser = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
