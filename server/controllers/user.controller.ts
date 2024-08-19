@@ -536,9 +536,38 @@ export const getAllUsers = CatchAsyncError(async (req: Request, res: Response, n
 // update user role --- only for admin
 export const updateUserRole = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { id, role} = req.body
-        
+        const { id, role } = req.body
+
         updateUserRoleService(res, id, role)
+    } catch (error: any) {
+        // Catch any errors that occur during the profile picture update process and pass them to the error handling middleware
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
+
+
+// Delete user ---- only admin
+export const deleteUser = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { id } = req.params;
+
+        const user = await userModel.findById(id)
+
+        if (!user) {
+            return next(new ErrorHandler("User not found", 400));
+
+        }
+
+        await user.deleteOne({ id });
+
+        await redis.del(id)
+
+        res.status(200).json({
+            success: true,
+            message: "User deleted successfully"
+        })
+
+
     } catch (error: any) {
         // Catch any errors that occur during the profile picture update process and pass them to the error handling middleware
         return next(new ErrorHandler(error.message, 400));

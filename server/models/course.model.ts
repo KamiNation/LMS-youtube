@@ -12,7 +12,7 @@ interface reviewInterface extends Document {
     user: UserModelInterface
     rating: number;
     comment: string;
-    commentReplies:object[]
+    commentReplies: object[]
 }
 
 interface linkInterface extends Document {
@@ -137,7 +137,7 @@ const courseSchema = new Schema<courseInterface>({
         type: Number,
         default: 0,
     },
-})
+}, { timestamps: true })
 
 const CourseModel: Model<courseInterface> = mongoose.model("Course", courseSchema);
 

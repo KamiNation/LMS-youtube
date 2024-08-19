@@ -1,6 +1,6 @@
 import express from "express"
 
-import { activateUser, registrationUser, loginUser, logoutUser, updateAccessToken, getUserInfo, socialAuth, updateUserInfo, updatePassword, updateProfilePicture, getAllUsers, updateUserRole } from "../controllers/user.controller"
+import { activateUser, registrationUser, loginUser, logoutUser, updateAccessToken, getUserInfo, socialAuth, updateUserInfo, updatePassword, updateProfilePicture, getAllUsers, updateUserRole, deleteUser } from "../controllers/user.controller"
 
 import { isAuthenticated, authorizeRoles } from "../middleware/auth";
 
@@ -39,6 +39,12 @@ userRouter.put("/update-user-role",
     isAuthenticated,
     authorizeRoles("admin"),
     updateUserRole
+)
+
+userRouter.delete("/delete-user/:id",
+    isAuthenticated,
+    authorizeRoles("admin"),
+    deleteUser
 )
 
 
