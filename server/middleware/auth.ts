@@ -34,7 +34,7 @@ export const isAuthenticated = CatchAsyncError(async (req: Request, res: Respons
 
     // If the user is not found in Redis, throw an error
     if (!user) {
-        return next(new ErrorHandler("user not found", 400))
+        return next(new ErrorHandler("Please login to access this resource not found", 400))
     }
 
     // Attach the user data to the request object after parsing it from JSON

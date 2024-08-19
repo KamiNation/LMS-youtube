@@ -254,6 +254,7 @@ export const updateAccessToken = CatchAsyncError(async (req: Request, res: Respo
 
         // Validate the refresh token using JWT's verify method
         const decoded = jwt.verify(refresh_token, process.env.REFRESH_TOKEN as string) as JwtPayload;
+
         console.log(" decoded in updateAccessTOken\n", decoded);
 
 
@@ -272,7 +273,7 @@ export const updateAccessToken = CatchAsyncError(async (req: Request, res: Respo
 
         // If the session does not exist in Redis, send an error response
         if (!session) {
-            return next(new ErrorHandler(message, 400));
+            return next(new ErrorHandler("Please login for access to this resource!", 400));
         }
 
         // Parse the user information from the session data stored in Redis
@@ -299,12 +300,15 @@ export const updateAccessToken = CatchAsyncError(async (req: Request, res: Respo
 
         // Set the new access and refresh tokens in the user's cookies with the appropriate options
         res.cookie("accessToken", accessToken, accessTokenOptions);
+
         res.cookie("refreshToken", refreshToken, refreshTokenOptions);
+
+        await redis.set(user._id, JSON.stringify(user), "EX", 604800 );
 
         // Send a success response back to the client, including the new access token
         res.status(200).json({
             status: "success",
-            refreshToken
+            accessToken
         });
 
     } catch (error: any) {
