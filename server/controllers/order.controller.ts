@@ -8,8 +8,7 @@ import path from "path";
 import ejs from "ejs"
 import sendMail from "../utils/sendMail";
 import NotificationModel from "../models/notification.model";
-import { newOrder } from "../services/order.service";
-
+import { getAllOrdersService, newOrder } from "../services/order.service";
 
 
 
@@ -95,7 +94,15 @@ export const createOrder = CatchAsyncError(async (req: Request, res: Response, n
 })
 
 
-
+// get all orders --- only for admin
+export const getAllOrders = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        getAllOrdersService(res)
+    } catch (error: any) {
+        // Catch any errors that occur during the profile picture update process and pass them to the error handling middleware
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
 
 
 

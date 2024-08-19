@@ -4,11 +4,14 @@ import cloudinary from 'cloudinary';
 import { NextFunction, Request, Response } from "express";
 import ErrorHandler from "../utils/ErrorHandler";
 import { CatchAsyncError } from '../middleware/catchAsyncError';
-import { createCourse } from '../services/course.service';
+import { createCourse, getAllCoursesService } from '../services/course.service';
 import CourseModel from '../models/course.model';
 import { redis } from '../utils/redis';
 import path from 'path';
 import sendMail from '../utils/sendMail';
+import NotificationModel from '../models/notification.model';
+import userModel from '../models/user.models';
+
 
 // upload course controller
 export const uploadCourse = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
@@ -209,6 +212,15 @@ export const addQuestion = CatchAsyncError(async (req: Request, res: Response, n
         // add this question to our course content
         courseContent.questions.push(newQuestion);
 
+        await NotificationModel.create({
+            user: req.user?._id,
+            title: "New Question",
+            message: `You have a new question in ${course?.name}`
+        });
+
+
+
+
         // save the updated course
         await course?.save();
 
@@ -265,10 +277,16 @@ export const addAnswer = CatchAsyncError(async (req: Request, res: Response, nex
         // add this answer to our user content
         question.questionReplies?.push(newAnswer)
 
+        // save the update course
         await course?.save()
 
         if (req.user?._id === question.user._id) {
             // create a notification
+            await NotificationModel.create({
+                user: req.user?._id,
+                title: "New Question Reply Received",
+                message: `You have a new question reply in ${course?.name}`
+            });
 
         } else {
             const data = {
@@ -418,3 +436,12 @@ export const addReplyToReview = CatchAsyncError(async (req: Request, res: Respon
 
 
 
+// get all courses
+export const getAllUsersCourses = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        getAllCoursesService(res)
+    } catch (error: any) {
+        // Catch any errors that occur during the profile picture update process and pass them to the error handling middleware
+        return next(new ErrorHandler(error.message, 400));
+    }
+});

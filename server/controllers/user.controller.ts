@@ -12,7 +12,7 @@ import jwt, { JwtPayload, Secret } from "jsonwebtoken";
 import sendMail from "../utils/sendMail";
 import { accessTokenOptions, sendToken, refreshTokenOptions } from "../utils/jwt";
 import { redis } from "../utils/redis";
-import { getUserById } from "../services/user.service";
+import { getAllUsersService, getUserById, updateUserRoleService } from "../services/user.service";
 import cloudinary from "cloudinary"
 
 // Define an interface for the user registration controller's input data
@@ -246,11 +246,11 @@ export const logoutUser = CatchAsyncError(async (req: Request, res: Response, ne
 export const updateAccessToken = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         console.log("updateAccessToken  up and grateful\n");
-        
+
         // Retrieve the refresh token from the cookies in the incoming request
         const refresh_token = req.cookies.refresh_token as string;
         console.log(" refresh_token in updateAccessTOken\n", refresh_token);
-        
+
 
         // Validate the refresh token using JWT's verify method
         const decoded = jwt.verify(refresh_token, process.env.REFRESH_TOKEN as string) as JwtPayload;
@@ -268,7 +268,7 @@ export const updateAccessToken = CatchAsyncError(async (req: Request, res: Respo
         // Fetch the session from Redis using the user ID from the decoded token
         const session = await redis.get(decoded.id as string);
         console.log(" session in updateAccessTOken\n", session);
-        
+
 
         // If the session does not exist in Redis, send an error response
         if (!session) {
@@ -278,7 +278,7 @@ export const updateAccessToken = CatchAsyncError(async (req: Request, res: Respo
         // Parse the user information from the session data stored in Redis
         const user = JSON.parse(session);
         console.log(" user in updateAccessTOken\n", user);
-        
+
 
         // Generate a new access token for the user with a short expiration time (e.g., 5 minutes)
         const accessToken = jwt.sign({ id: user._id }, process.env.ACCESS_TOKEN as string, {
@@ -515,6 +515,30 @@ export const updateProfilePicture = CatchAsyncError(async (req: Request, res: Re
             return next(new ErrorHandler("Invalid request: missing avatar or user", 400));
         }
 
+    } catch (error: any) {
+        // Catch any errors that occur during the profile picture update process and pass them to the error handling middleware
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
+
+
+// get all user --- admin only 
+export const getAllUsers = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        getAllUsersService(res)
+    } catch (error: any) {
+        // Catch any errors that occur during the profile picture update process and pass them to the error handling middleware
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
+
+
+// update user role --- only for admin
+export const updateUserRole = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { id, role} = req.body
+        
+        updateUserRoleService(res, id, role)
     } catch (error: any) {
         // Catch any errors that occur during the profile picture update process and pass them to the error handling middleware
         return next(new ErrorHandler(error.message, 400));
