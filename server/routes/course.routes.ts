@@ -1,7 +1,7 @@
 import express from "express"
 
 import { isAuthenticated, authorizeRoles, } from "../middleware/auth";
-import { uploadCourse, editCourses, getSingleCourse } from "../controllers/course.controller";
+import { uploadCourse, editCourses, getSingleCourse, getAllCourses, getCourseByUser, addQuestion, addAnswer, addReview, addReplyToReview } from "../controllers/course.controller";
 
 
 const courseRouter = express.Router();
@@ -18,9 +18,39 @@ courseRouter.put("/edit-course/:id",
 )
 
 courseRouter.get("/get-course/:id", 
-    isAuthenticated, 
-    authorizeRoles("admin"), 
     getSingleCourse
+)
+
+courseRouter.get("/get-courses", 
+    getAllCourses
+)
+
+// start controller test from here 5:32:40
+
+courseRouter.get("/get-course-content/:id", 
+    isAuthenticated, 
+    getCourseByUser
+)
+
+courseRouter.put("/add-question", 
+    isAuthenticated, 
+    addQuestion
+)
+
+courseRouter.put("/add-answer", 
+    isAuthenticated, 
+    addAnswer
+)
+
+courseRouter.put("/add-review/:id", 
+    isAuthenticated, 
+    addReview
+)
+
+courseRouter.put("/add-reply", 
+    isAuthenticated, 
+    authorizeRoles("admin"),
+    addReplyToReview
 )
 
 

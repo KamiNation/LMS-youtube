@@ -9,6 +9,9 @@ import morgan from "morgan"
 // Custom import
 import userRouter from "./routes/user.routes";
 import courseRouter from "./routes/course.routes";
+import orderRouter from "./routes/order.routes";
+import notificationRouter from "./routes/notification.routes";
+
 
 // import errorMiddleware from middleware
 import { ErrorMiddleware } from "./middleware/error";
@@ -32,8 +35,8 @@ app.use(cors({
 app.use(morgan("tiny"))
 
 // routes
-app.use("/api/v1", userRouter, courseRouter)
-// app.use("/c", courseRouter)
+app.use("/api/v1", userRouter, courseRouter, orderRouter, notificationRouter )
+
 
 // testing api
 app.get("/test", (req: Request, res: Response, next: NextFunction) => {

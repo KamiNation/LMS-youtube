@@ -7,6 +7,7 @@ require("dotenv").config();
 // Retrieve the database connection string from environment variables
 // If the DB_STRING is not defined, use an empty string as a fallback
 const DB_STRING: string = process.env.DB_STRING || '';
+console.log(DB_STRING)
 
 // Define an asynchronous function to connect to the MongoDB database
 const connectDB = async () => {
